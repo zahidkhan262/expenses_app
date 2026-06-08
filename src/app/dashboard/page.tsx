@@ -7,9 +7,10 @@ import { getDashboardStats } from "@/services/dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { CategoryPieCard, MonthlyTrendCard, WeeklyBarCard } from "@/modules/dashboard/components/charts";
 import { AddExpenseHeaderButton } from "@/modules/dashboard/components/add-expense-header-button";
+import { BudgetMonthCard } from "@/modules/dashboard/components/budget-month-card";
+import { DashboardTabs } from "@/modules/dashboard/components/dashboard-tabs";
 import { getCategoryMeta } from "@/utils/categories";
 import { cn } from "@/lib/utils";
 import { formatInr } from "@/utils/currency";
@@ -47,26 +48,11 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const stats = await getDashboardStats(user.sub);
   const highestMeta = stats.highestCategory ? getCategoryMeta(stats.highestCategory.category) : null;
+  const currentMonth = format(new Date(), "yyyy-MM");
 
-  return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 sm:px-6">
-      <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-gradient-to-br from-primary/15 via-background to-background p-5 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Welcome back</p>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{user.name}</h1>
-            <p className="text-xs text-muted-foreground">{format(new Date(), "EEEE, MMM d")}</p>
-          </div>
-          <div className="flex gap-2">
-            <AddExpenseHeaderButton />
-            <Button asChild variant="outline">
-              <Link href="/dashboard/expenses">Manage expenses</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+  const overview = (
+    <>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="Total today"
           value={formatInr(stats.todayTotal)}
@@ -127,42 +113,13 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Budget</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {stats.budgetMonthAmount == null ? (
-              <div className="rounded-[var(--radius)] border border-dashed border-border p-4">
-                <p className="text-sm font-medium">No budget set</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Add a monthly budget to track progress.
-                </p>
-                <div className="mt-3">
-                  <Button asChild variant="outline" className="w-full">
-                    <Link href="/dashboard/budget">Set budget</Link>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-sm text-muted-foreground">Monthly budget</div>
-                  <div className="text-sm font-semibold tabular-nums">
-                    {formatInr(stats.budgetMonthAmount)}
-                  </div>
-                </div>
-                <Progress value={stats.budgetProgressPct ?? 0} />
-                <div className="flex items-baseline justify-between">
-                  <div className="text-xs text-muted-foreground">Remaining</div>
-                  <div className="text-xs font-medium tabular-nums">
-                    {formatInr(Number(stats.budgetRemaining ?? 0))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <BudgetMonthCard
+          initialMonth={currentMonth}
+          initialBudgetAmount={stats.budgetMonthAmount}
+          initialExpensesTotal={stats.monthTotal}
+          initialRemaining={stats.budgetRemaining}
+          initialProgressPct={stats.budgetProgressPct}
+        />
 
         <Card>
           <CardHeader className="flex-row items-center justify-between">
@@ -203,7 +160,28 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+    </>
+  );
+
+  return (
+    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 sm:px-6">
+      <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-gradient-to-br from-primary/15 via-background to-background p-5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Welcome back</p>
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{user.name}</h1>
+            <p className="text-xs text-muted-foreground">{format(new Date(), "EEEE, MMM d")}</p>
+          </div>
+          <div className="flex gap-2">
+            <AddExpenseHeaderButton />
+            <Button asChild variant="outline">
+              <Link href="/dashboard/expenses">Manage expenses</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <DashboardTabs overview={overview} />
     </div>
   );
 }
-

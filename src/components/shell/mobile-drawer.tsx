@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SidebarNav } from "@/components/shell/nav";
 
-export function MobileDrawer() {
+export function MobileDrawer({ isAdmin = false }: { isAdmin?: boolean }) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -23,7 +23,7 @@ export function MobileDrawer() {
             <DialogTitle>Menu</DialogTitle>
           </DialogHeader>
           <div className="flex-1 p-3" onClick={() => setOpen(false)}>
-            <SidebarNav />
+            <SidebarNav isAdmin={isAdmin} />
           </div>
         </div>
       </DialogContent>

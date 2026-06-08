@@ -42,14 +42,28 @@ function toItem(doc: ExpenseLean): ExpenseListItem {
   };
 }
 
+export type ExpenseListResult = {
+  items: ExpenseListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export async function listExpensesAction(params?: {
   q?: string;
   category?: string;
   from?: string;
   to?: string;
-}): Promise<ActionResult<ExpenseListItem[]>> {
+  page?: number;
+  pageSize?: number;
+}): Promise<ActionResult<ExpenseListResult>> {
   const user = await requireUser();
   await connectToDb();
+
+  const page = Math.max(1, params?.page ?? 1);
+  const pageSize = Math.min(50, Math.max(1, params?.pageSize ?? 10));
+  const skip = (page - 1) * pageSize;
 
   const query: {
     userId: string;
@@ -70,11 +84,25 @@ export async function listExpensesAction(params?: {
     if (params.to) query.date.$lte = new Date(params.to);
   }
 
-  const docs = await Expense.find(query)
-    .sort({ date: -1, createdAt: -1 })
-    .limit(500)
-    .lean<ExpenseLean[]>();
-  return { ok: true, data: docs.map(toItem) };
+  const [total, docs] = await Promise.all([
+    Expense.countDocuments(query),
+    Expense.find(query)
+      .sort({ date: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize)
+      .lean<ExpenseLean[]>(),
+  ]);
+
+  return {
+    ok: true,
+    data: {
+      items: docs.map(toItem),
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
+  };
 }
 
 export async function createExpenseAction(input: ExpenseInput): Promise<ActionResult> {

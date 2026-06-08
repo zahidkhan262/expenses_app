@@ -7,9 +7,11 @@ import { UserMenu } from "@/components/shell/user-menu";
 
 export function AppShell({
   user,
+  isAdmin = false,
   children,
 }: {
   user: { name: string; email: string };
+  isAdmin?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -26,7 +28,7 @@ export function AppShell({
             </div>
           </div>
           <div className="flex-1 px-3">
-            <SidebarNav />
+            <SidebarNav isAdmin={isAdmin} />
           </div>
           <div className="border-t border-border p-4">
             <div className="flex items-center justify-between">
@@ -40,7 +42,7 @@ export function AppShell({
           <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
-                <MobileDrawer />
+                <MobileDrawer isAdmin={isAdmin} />
                 <span className="text-sm font-semibold">Daily Expense</span>
               </div>
               <div className="flex items-center gap-1">

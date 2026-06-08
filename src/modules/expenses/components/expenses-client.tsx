@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Download, Filter, Plus, Search, Trash2, Pencil, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Filter, Plus, Search, Trash2, Pencil, Info } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -20,6 +20,8 @@ import { Separator } from "@/components/ui/separator";
 import { ExpenseFormDialog } from "@/modules/expenses/components/expense-form-dialog";
 import { cn } from "@/lib/utils";
 import { formatInr } from "@/utils/currency";
+
+const PAGE_SIZE = 10;
 
 function exportCsv(items: ExpenseListItem[]) {
   const header = ["Title", "Amount", "Category", "Notes", "Date"].join(",");
@@ -52,6 +54,9 @@ export function ExpensesClient() {
   const [from, setFrom] = React.useState<string>("");
   const [to, setTo] = React.useState<string>("");
   const [tipsOpen, setTipsOpen] = React.useState(false);
+  const [page, setPage] = React.useState(1);
+  const [total, setTotal] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(1);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -60,6 +65,10 @@ export function ExpensesClient() {
     return () => window.clearTimeout(timer);
   }, [q]);
 
+  React.useEffect(() => {
+    setPage(1);
+  }, [debouncedQ, category, from, to]);
+
   const refresh = React.useCallback(async () => {
     setLoading(true);
     const res = await listExpensesAction({
@@ -67,18 +76,28 @@ export function ExpensesClient() {
       category,
       from: from || undefined,
       to: to || undefined,
+      page,
+      pageSize: PAGE_SIZE,
     });
     if (!res.ok) toast.error(res.error);
-    setItems(res.ok ? res.data ?? [] : []);
+    if (res.ok && res.data) {
+      setItems(res.data.items);
+      setTotal(res.data.total);
+      setTotalPages(res.data.totalPages);
+    } else {
+      setItems([]);
+      setTotal(0);
+      setTotalPages(1);
+    }
     setLoading(false);
-  }, [debouncedQ, category, from, to]);
+  }, [debouncedQ, category, from, to, page]);
 
   React.useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
   }, [refresh]);
 
-  const total = React.useMemo(() => items.reduce((sum, x) => sum + x.amount, 0), [items]);
+  const pageTotal = React.useMemo(() => items.reduce((sum, x) => sum + x.amount, 0), [items]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 sm:px-6">
@@ -143,7 +162,8 @@ export function ExpensesClient() {
               </div>
             </div>
             <div className="text-sm text-muted-foreground">
-              Total: <span className="font-medium text-foreground">{formatInr(total)}</span>
+              {total} total • Page total:{" "}
+              <span className="font-medium text-foreground">{formatInr(pageTotal)}</span>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -221,63 +241,93 @@ export function ExpensesClient() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                {items.map((x) => {
-                  const meta = getCategoryMeta(x.category);
-                  const Icon = meta.icon;
-                  return (
-                    <div
-                      key={x.id}
-                      className="group flex flex-col gap-3 rounded-[var(--radius)] border border-border bg-background p-4 transition-colors hover:bg-accent/40 sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 capitalize">
-                          <span className={cn("rounded-md bg-accent/60 p-1.5", meta.colorClass)}>
-                            <Icon className="h-4 w-4" />
-                          </span>
-                          <p className="truncate text-sm font-semibold">{x.title}</p>
+              <>
+                <div className="space-y-3">
+                  {items.map((x) => {
+                    const meta = getCategoryMeta(x.category);
+                    const Icon = meta.icon;
+                    return (
+                      <div
+                        key={x.id}
+                        className="group flex flex-col gap-3 rounded-[var(--radius)] border border-border bg-background p-4 transition-colors hover:bg-accent/40 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 capitalize">
+                            <span className={cn("rounded-md bg-accent/60 p-1.5", meta.colorClass)}>
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <p className="truncate text-sm font-semibold">{x.title}</p>
+                          </div>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 capitalize text-xs text-muted-foreground">
+                            <Badge className={cn("border", meta.badgeClass)} variant="outline">
+                              {meta.label}
+                            </Badge>
+                            <span>{format(new Date(x.date), "MMM d, yyyy")}</span>
+                            {x.notes ? <span className="truncate">• {x.notes}</span> : null}
+                          </div>
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 capitalize text-xs text-muted-foreground">
-                          <Badge className={cn("border", meta.badgeClass)} variant="outline">
-                            {meta.label}
-                          </Badge>
-                          <span>{format(new Date(x.date), "MMM d, yyyy")}</span>
-                          {x.notes ? <span className="truncate">• {x.notes}</span> : null}
+                        <div className="flex items-center justify-between gap-2 sm:justify-end">
+                          <p className="text-sm font-semibold tabular-nums">{formatInr(x.amount)}</p>
+                          <div className="flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
+                            <ExpenseFormDialog
+                              expense={x}
+                              trigger={
+                                <Button size="icon" variant="ghost" aria-label="Edit">
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              }
+                              onSaved={refresh}
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              aria-label="Delete"
+                              onClick={async () => {
+                                const ok = confirm("Delete this expense?");
+                                if (!ok) return;
+                                const res = await deleteExpenseAction(x.id);
+                                if (!res.ok) toast.error(res.error);
+                                else toast.success("Expense deleted");
+                                void refresh();
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between gap-2 sm:justify-end">
-                        <p className="text-sm font-semibold tabular-nums">{formatInr(x.amount)}</p>
-                        <div className="flex gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                          <ExpenseFormDialog
-                            expense={x}
-                            trigger={
-                              <Button size="icon" variant="ghost" aria-label="Edit">
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                            }
-                            onSaved={refresh}
-                          />
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            aria-label="Delete"
-                            onClick={async () => {
-                              const ok = confirm("Delete this expense?");
-                              if (!ok) return;
-                              const res = await deleteExpenseAction(x.id);
-                              if (!res.ok) toast.error(res.error);
-                              else toast.success("Expense deleted");
-                              void refresh();
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
+                    );
+                  })}
+                </div>
+
+                {totalPages > 1 ? (
+                  <div className="flex items-center justify-between pt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Page {page} of {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Prev
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page >= totalPages}
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                ) : null}
+              </>
             )}
           </CardContent>
         </Card>

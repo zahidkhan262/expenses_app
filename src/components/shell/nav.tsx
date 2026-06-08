@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Wallet, Receipt, PiggyBank } from "lucide-react";
+import {
+  ArrowLeftRight,
+  BarChart3,
+  Wallet,
+  Receipt,
+  PiggyBank,
+  Shield,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -11,13 +18,22 @@ export const NAV_ITEMS = [
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt },
   { href: "/dashboard/income", label: "Income", icon: Wallet },
   { href: "/dashboard/budget", label: "Budget", icon: PiggyBank },
+  { href: "/dashboard/borrows", label: "Borrow", icon: ArrowLeftRight },
 ] as const;
 
-export function SidebarNav() {
+export const ADMIN_NAV_ITEM = {
+  href: "/dashboard/admin",
+  label: "Admin",
+  icon: Shield,
+} as const;
+
+export function SidebarNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const items = isAdmin ? [...NAV_ITEMS, ADMIN_NAV_ITEM] : NAV_ITEMS;
+
   return (
     <nav className="space-y-1">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = pathname === item.href;
         const Icon = item.icon;
         return (
@@ -66,4 +82,3 @@ export function BottomNav() {
     </nav>
   );
 }
-
