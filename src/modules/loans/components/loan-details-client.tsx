@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 
 interface Props {
-  loan: { id: string, title: string, principalAmount: number, roi: number, tenureMonths: number, installments: unknown[] };
+  loan: { id: string, title: string, principalAmount: number, roi: number, tenureMonths: number, startDate: string, installments: any[] };
 }
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--destructive))"];
@@ -147,7 +147,7 @@ export function LoanDetailsClient({ loan }: Props) {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => formatInr(value)}
+                  formatter={(value: any) => formatInr(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))' }}
                 />
                 <Legend />

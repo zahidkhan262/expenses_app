@@ -27,7 +27,7 @@ interface Props {
 
 export function LoanFormDialog({ loan, open, onOpenChange, onSuccess }: Props) {
   const form = useForm<LoanInput>({
-    resolver: zodResolver(loanSchema),
+    resolver: zodResolver(loanSchema) as any,
     defaultValues: {
       title: "",
       principalAmount: 0,
