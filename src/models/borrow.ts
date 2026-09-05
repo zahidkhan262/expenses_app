@@ -20,6 +20,7 @@ const BorrowSchema = new Schema(
     amount: { type: Number, required: true, min: 0 },
     personName: { type: String, required: true, trim: true, maxlength: 100 },
     type: { type: String, enum: ["given", "taken"], required: true },
+    status: { type: String, enum: ["active", "returned"], default: "active" },
     notes: { type: String, trim: true, maxlength: 500, default: "" },
     date: { type: Date, required: true, index: true },
     history: { type: [BorrowHistorySchema], default: [] },

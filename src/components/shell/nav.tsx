@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ArrowLeftRight,
+  Landmark,
   BarChart3,
   Wallet,
   Receipt,
-  PiggyBank,
+  
   Shield,
 } from "lucide-react";
 
@@ -16,9 +17,9 @@ import { cn } from "@/lib/utils";
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: BarChart3 },
   { href: "/dashboard/expenses", label: "Expenses", icon: Receipt },
-  { href: "/dashboard/income", label: "Income", icon: Wallet },
-  { href: "/dashboard/budget", label: "Budget", icon: PiggyBank },
+  { href: "/dashboard/budget", label: "Budget & Income", icon: Wallet },
   { href: "/dashboard/borrows", label: "Borrow", icon: ArrowLeftRight },
+  { href: "/dashboard/loans", label: "Loans", icon: Landmark },
 ] as const;
 
 export const ADMIN_NAV_ITEM = {
@@ -69,12 +70,11 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex w-full flex-col items-center justify-center gap-1 rounded-[var(--radius)] px-2 py-2 text-xs",
-                active ? "text-primary" : "text-muted-foreground",
+                "flex w-full items-center justify-center rounded-[var(--radius)] px-2 py-3 transition-colors",
+                active ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-accent hover:text-foreground",
               )}
             >
-              <Icon className="h-5 w-5" />
-              <span className="leading-none">{item.label}</span>
+              <Icon className="h-6 w-6" />
             </Link>
           );
         })}

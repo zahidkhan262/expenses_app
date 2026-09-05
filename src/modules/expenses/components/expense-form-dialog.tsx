@@ -34,7 +34,7 @@ export function ExpenseFormDialog({
       date: expense?.date ? new Date(expense.date) : new Date(),
     },
   });
-  const selectedDate = form?.watch?.("date");
+  const selectedDate = form.watch("date");
 
   React.useEffect(() => {
     if (!open) return;
@@ -110,7 +110,7 @@ export function ExpenseFormDialog({
             <Input
               id="date"
               type="date"
-              value={new Date(selectedDate).toISOString().slice(0, 10)}
+              value={selectedDate ? new Date(selectedDate).toISOString().slice(0, 10) : ""}
               onChange={(e) => form.setValue("date", new Date(e.target.value))}
             />
             {form.formState.errors.date?.message ? (

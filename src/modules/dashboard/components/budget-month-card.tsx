@@ -64,12 +64,12 @@ export function BudgetMonthCard({
 
   return (
     <Card>
-      <CardHeader className="flex-row items-center justify-between gap-3">
+      <CardHeader className="flex-col items-stretch gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <CardTitle>Budget</CardTitle>
         <select
           value={month}
           onChange={(e) => onMonthChange(e.target.value)}
-          className="h-9 rounded-[var(--radius)] border border-input bg-background px-2 text-xs shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="h-9 w-full rounded-[var(--radius)] border border-input bg-background px-2 text-xs shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
         >
           {monthOptions.map((m) => (
             <option key={m.value} value={m.value}>
@@ -78,7 +78,7 @@ export function BudgetMonthCard({
           ))}
         </select>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
         {loading ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-full" />
@@ -99,22 +99,22 @@ export function BudgetMonthCard({
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between gap-3">
               <div className="text-sm text-muted-foreground">Monthly budget</div>
-              <div className="text-sm font-semibold tabular-nums">
+              <div className="shrink-0 text-right text-sm font-semibold tabular-nums">
                 {formatInr(stats.budgetAmount)}
               </div>
             </div>
-            <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+            <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
               <span>Expenses ({stats.monthLabel})</span>
-              <span className="font-medium tabular-nums text-foreground">
+              <span className="shrink-0 text-right font-medium tabular-nums text-foreground">
                 {formatInr(stats.expensesTotal)}
               </span>
             </div>
             <Progress value={stats.progressPct ?? 0} />
-            <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline justify-between gap-3">
               <div className="text-xs text-muted-foreground">Remaining</div>
-              <div className="text-xs font-medium tabular-nums">
+              <div className="shrink-0 text-right text-xs font-medium tabular-nums">
                 {formatInr(Number(stats.remaining ?? 0))}
               </div>
             </div>

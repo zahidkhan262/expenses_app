@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronUp, History, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ChevronDown, ChevronUp, History, Pencil, Plus, Search, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import {
   deleteBorrowAction,
   listBorrowsAction,
+  markBorrowReturnedAction,
   type BorrowListItem,
 } from "@/modules/borrow/actions";
 import { BorrowFormDialog } from "@/modules/borrow/components/borrow-form-dialog";
@@ -55,6 +56,11 @@ function BorrowRow({
             <Badge variant="outline" className={cn(isGiven ? "border-emerald-500/30" : "border-rose-500/30")}>
               {isGiven ? "I gave" : "I took"}
             </Badge>
+            {item.status === "returned" && (
+              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400">
+                Returned
+              </Badge>
+            )}
             <span>{item.personName}</span>
             <span>•</span>
             <span>{format(new Date(item.date), "MMM d, yyyy")}</span>
@@ -69,6 +75,32 @@ function BorrowRow({
         <div className="flex items-center justify-between gap-2 sm:justify-end">
           <p className="text-sm font-semibold tabular-nums">{formatInr(item.amount)}</p>
           <div className="flex gap-1">
+            {item.status !== "returned" ? (
+              <Button
+                size="icon"
+                variant="ghost"
+                aria-label="Mark as returned"
+                onClick={() => {
+                  toast("Mark this borrow as returned?", {
+                    action: {
+                      label: "Confirm",
+                      onClick: async () => {
+                        const res = await markBorrowReturnedAction(item.id);
+                        if (!res.ok) toast.error(res.error);
+                        else toast.success("Marked as returned");
+                        onRefresh();
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <Check className="h-4 w-4 text-emerald-500" />
+              </Button>
+            ) : null}
             {item.history.length > 0 ? (
               <Button
                 size="icon"
@@ -96,13 +128,22 @@ function BorrowRow({
               size="icon"
               variant="ghost"
               aria-label="Delete"
-              onClick={async () => {
-                const ok = confirm("Delete this borrow record?");
-                if (!ok) return;
-                const res = await deleteBorrowAction(item.id);
-                if (!res.ok) toast.error(res.error);
-                else toast.success("Borrow deleted");
-                onRefresh();
+              onClick={() => {
+                toast("Delete this borrow record?", {
+                  action: {
+                    label: "Confirm",
+                    onClick: async () => {
+                      const res = await deleteBorrowAction(item.id);
+                      if (!res.ok) toast.error(res.error);
+                      else toast.success("Borrow deleted");
+                      onRefresh();
+                    },
+                  },
+                  cancel: {
+                    label: "Cancel",
+                    onClick: () => {},
+                  },
+                });
               }}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
@@ -167,11 +208,11 @@ export function BorrowsClient() {
   }, [refresh]);
 
   const givenTotal = React.useMemo(
-    () => items.filter((x) => x.type === "given").reduce((sum, x) => sum + x.amount, 0),
+    () => items.filter((x) => x.type === "given" && x.status !== "returned").reduce((sum, x) => sum + x.amount, 0),
     [items],
   );
   const takenTotal = React.useMemo(
-    () => items.filter((x) => x.type === "taken").reduce((sum, x) => sum + x.amount, 0),
+    () => items.filter((x) => x.type === "taken" && x.status !== "returned").reduce((sum, x) => sum + x.amount, 0),
     [items],
   );
 

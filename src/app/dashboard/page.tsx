@@ -30,13 +30,13 @@ function StatCard({
 }) {
   return (
     <Card className={cn("transition-transform hover:-translate-y-0.5 hover:shadow-md", className)}>
-      <CardHeader className="flex-row items-start justify-between">
-        <div className="space-y-1">
+      <CardHeader className="flex-row items-start justify-between gap-3 p-4 sm:p-5">
+        <div className="min-w-0 space-y-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-xl font-semibold tracking-tight">{value}</p>
+          <p className="break-words text-lg font-semibold tracking-tight sm:text-xl">{value}</p>
           {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
         </div>
-        <span className="rounded-[var(--radius)] border border-border bg-accent/60 p-2 text-muted-foreground">
+        <span className="shrink-0 rounded-[var(--radius)] border border-border bg-accent/60 p-2 text-muted-foreground">
           {icon}
         </span>
       </CardHeader>
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
 
   const overview = (
     <>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           title="Total today"
           value={formatInr(stats.todayTotal)}
@@ -75,10 +75,10 @@ export default async function DashboardPage() {
           className="border-amber-200/70 bg-gradient-to-br from-amber-50 via-background to-orange-50/60 dark:border-border dark:from-background dark:to-background"
         />
         <Card className="border-fuchsia-200/70 bg-gradient-to-br from-fuchsia-50 via-background to-pink-50/60 transition-transform hover:-translate-y-0.5 hover:shadow-md dark:border-border dark:from-background dark:to-background">
-          <CardHeader className="flex-row items-start justify-between">
-            <div className="space-y-1">
+          <CardHeader className="flex-row items-start justify-between gap-3 p-4 sm:p-5">
+            <div className="min-w-0 space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Top category</p>
-              <p className="text-xl font-semibold tracking-tight">
+              <p className="break-words text-lg font-semibold tracking-tight sm:text-xl">
                 {stats.highestCategory ? highestMeta?.label ?? stats.highestCategory.category : "—"}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
             </div>
             <span
               className={cn(
-                "rounded-[var(--radius)] border border-border bg-accent/60 p-2",
+                "shrink-0 rounded-[var(--radius)] border border-border bg-accent/60 p-2",
                 highestMeta?.colorClass,
               )}
             >
@@ -104,12 +104,10 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-5 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <div className="flex w-max gap-3 md:grid md:w-full md:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-3">
           <CategoryPieCard data={stats.categoryPie} />
           <WeeklyBarCard data={stats.weeklyBars} />
           <MonthlyTrendCard data={stats.monthlyTrend} />
-        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -122,13 +120,13 @@ export default async function DashboardPage() {
         />
 
         <Card>
-          <CardHeader className="flex-row items-center justify-between">
+          <CardHeader className="flex-row items-center justify-between gap-3 p-4 sm:p-5">
             <CardTitle>Recent expenses</CardTitle>
             <Button asChild variant="ghost" className="h-8 px-2 text-xs">
               <Link href="/dashboard/expenses">View all</Link>
             </Button>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
             {stats.recentExpenses.length === 0 ? (
               <div className="rounded-[var(--radius)] border border-dashed border-border p-4 text-center">
                 <p className="text-sm font-medium">Nothing yet</p>
@@ -140,10 +138,10 @@ export default async function DashboardPage() {
               stats.recentExpenses.map((x) => {
                 const meta = getCategoryMeta(x.category);
                 return (
-                  <div key={x.id} className="flex items-center justify-between gap-3">
+                  <div key={x.id} className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{x.title}</div>
-                      <div className="mt-1 flex items-center gap-2">
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
                         <Badge className={cn("border", meta.badgeClass)} variant="outline">
                           {meta.label}
                         </Badge>
@@ -152,7 +150,7 @@ export default async function DashboardPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="text-sm font-semibold tabular-nums">{formatInr(x.amount)}</div>
+                    <div className="shrink-0 text-right text-sm font-semibold tabular-nums">{formatInr(x.amount)}</div>
                   </div>
                 );
               })
@@ -164,17 +162,17 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 sm:px-6">
-      <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-gradient-to-br from-primary/15 via-background to-background p-5 sm:p-6">
+    <div className="mx-auto w-full max-w-6xl px-3 pb-24 pt-4 sm:px-6 sm:pt-6">
+      <div className="overflow-hidden rounded-[var(--radius)] border border-border bg-gradient-to-br from-primary/15 via-background to-background p-4 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             <p className="text-sm text-muted-foreground">Welcome back</p>
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{user.name}</h1>
+            <h1 className="break-words text-xl font-semibold tracking-tight sm:text-2xl">{user.name}</h1>
             <p className="text-xs text-muted-foreground">{format(new Date(), "EEEE, MMM d")}</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 min-[420px]:flex-row sm:shrink-0">
             <AddExpenseHeaderButton />
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="w-full min-[420px]:w-auto">
               <Link href="/dashboard/expenses">Manage expenses</Link>
             </Button>
           </div>
