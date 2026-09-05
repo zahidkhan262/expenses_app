@@ -99,7 +99,7 @@ export async function getLoanDetailsAction(id: string) {
     
     await connectToDb();
     
-    const loan = await Loan.findOne({ _id: id, userId: user.sub }).lean();
+    const loan = (await Loan.findOne({ _id: id, userId: user.sub }).lean()) as any;
     if (!loan) return { ok: false, error: "Not found" };
     
     return { 
