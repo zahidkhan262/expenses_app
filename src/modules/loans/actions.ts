@@ -79,7 +79,7 @@ export async function listLoansAction() {
       
     return { 
       ok: true, 
-      data: loans.map((l: { _id: unknown, title: string, principalAmount: number, roi: number, tenureMonths: number, startDate: Date }) => ({
+      data: (loans as unknown as Array<{ _id: { toString(): string }, title: string, principalAmount: number, roi: number, tenureMonths: number, startDate: Date }>).map(l => ({
         id: l._id.toString(),
         title: l.title,
         principalAmount: l.principalAmount,
@@ -111,7 +111,7 @@ export async function getLoanDetailsAction(id: string) {
         roi: loan.roi,
         tenureMonths: loan.tenureMonths,
         startDate: loan.startDate.toISOString(),
-        installments: loan.installments.map((inst: { _id?: unknown, monthDate: Date, monthNumber: number, emi: number, principalComponent: number, interestComponent: number, remainingBalance: number, isPaid: boolean }) => ({
+        installments: (loan.installments as unknown as Array<{ _id?: { toString(): string }, monthDate: Date, monthNumber: number, emi: number, principalComponent: number, interestComponent: number, remainingBalance: number, isPaid: boolean }>).map(inst => ({
           id: inst._id?.toString(),
           monthDate: inst.monthDate.toISOString(),
           monthNumber: inst.monthNumber,
@@ -186,7 +186,7 @@ export async function updateLoanAction(loanId: string, input: LoanInput) {
     let remainingBalance = P;
     const installments = [];
     
-    const oldInstallmentsMap = new Map(existingLoan.installments.map((i: { monthNumber: number, isPaid: boolean }) => [i.monthNumber, i.isPaid]));
+    const oldInstallmentsMap = new Map((existingLoan.installments as unknown as Array<{ monthNumber: number, isPaid: boolean }>).map(i => [i.monthNumber, i.isPaid]));
     
     for (let i = 1; i <= n; i++) {
       const interestForMonth = remainingBalance * r;
