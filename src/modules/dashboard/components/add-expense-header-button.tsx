@@ -13,7 +13,7 @@ export function AddExpenseHeaderButton() {
     <ExpenseFormDialog
       onSaved={() => router.refresh()}
       trigger={
-        <Button>
+        <Button className="w-full min-[420px]:w-auto">
           <Plus className="h-4 w-4" />
           Add expense
         </Button>
@@ -21,4 +21,3 @@ export function AddExpenseHeaderButton() {
     />
   );
 }
-

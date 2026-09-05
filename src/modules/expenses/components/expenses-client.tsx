@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { ChevronLeft, ChevronRight, Download, Filter, Plus, Search, Trash2, Pencil, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Filter, Plus, Search, Trash2, Pencil, Info, X } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -11,6 +11,7 @@ import {
   type ExpenseListItem,
 } from "@/modules/expenses/actions";
 import { CATEGORIES, getCategoryMeta } from "@/utils/categories";
+import { buildYearOptions, buildMonthList, getWeeksForMonth, computeDateRange } from "@/utils/date";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,7 +22,7 @@ import { ExpenseFormDialog } from "@/modules/expenses/components/expense-form-di
 import { cn } from "@/lib/utils";
 import { formatInr } from "@/utils/currency";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 function exportCsv(items: ExpenseListItem[]) {
   const header = ["Title", "Amount", "Category", "Notes", "Date"].join(",");
@@ -45,59 +46,119 @@ function exportCsv(items: ExpenseListItem[]) {
   URL.revokeObjectURL(url);
 }
 
+const now = new Date();
+const INITIAL_YEAR = now.getFullYear().toString();
+const INITIAL_MONTH = (now.getMonth() + 1).toString().padStart(2, "0");
+const INITIAL_WEEKS = getWeeksForMonth(INITIAL_YEAR, INITIAL_MONTH);
+const todayStr = format(now, "yyyy-MM-dd");
+const INITIAL_WEEK = INITIAL_WEEKS.find(w => todayStr >= w.from && todayStr <= w.to)?.value || "all";
+
 export function ExpensesClient() {
   const [items, setItems] = React.useState<ExpenseListItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [q, setQ] = React.useState("");
   const [debouncedQ, setDebouncedQ] = React.useState("");
   const [category, setCategory] = React.useState<string>("all");
-  const [from, setFrom] = React.useState<string>("");
-  const [to, setTo] = React.useState<string>("");
+  const [year, setYear] = React.useState<string>(INITIAL_YEAR);
+  const [month, setMonth] = React.useState<string>(INITIAL_MONTH);
+  const [week, setWeek] = React.useState<string>(INITIAL_WEEK);
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  
+  const yearOptions = React.useMemo(() => buildYearOptions(5), []);
+  const monthOptions = React.useMemo(() => buildMonthList(), []);
+  const weekOptions = React.useMemo(() => getWeeksForMonth(year, month), [year, month]);
+  
+  const allWeekOptions = React.useMemo(() => {
+    return [{ value: "all", label: "All Weeks in Month" }, ...weekOptions];
+  }, [weekOptions]);
+  
+  const currentWeekIndex = React.useMemo(() => {
+    const idx = allWeekOptions.findIndex(w => w.value === week);
+    return idx > -1 ? idx : 0;
+  }, [allWeekOptions, week]);
+  
+  const filterRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!filterOpen) return;
+    function handle(e: MouseEvent) {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [filterOpen]);
+  
+  const hasActiveFilters = category !== "all" || month !== INITIAL_MONTH || week !== INITIAL_WEEK || year !== INITIAL_YEAR;
   const [tipsOpen, setTipsOpen] = React.useState(false);
   const [page, setPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [totalPages, setTotalPages] = React.useState(1);
+  const [refreshTrigger, setRefreshTrigger] = React.useState(0);
 
+  const handlePrevWeek = React.useCallback(() => {
+    if (currentWeekIndex > 0) {
+      setWeek(allWeekOptions[currentWeekIndex - 1].value);
+      setPage(1);
+    }
+  }, [currentWeekIndex, allWeekOptions]);
+  
+  const handleNextWeek = React.useCallback(() => {
+    if (currentWeekIndex < allWeekOptions.length - 1) {
+      setWeek(allWeekOptions[currentWeekIndex + 1].value);
+      setPage(1);
+    }
+  }, [currentWeekIndex, allWeekOptions]);
+
+  // Debounce search query
   React.useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setDebouncedQ(q.trim());
-    }, 500);
+    const timer = window.setTimeout(() => setDebouncedQ(q.trim()), 500);
     return () => window.clearTimeout(timer);
   }, [q]);
 
+  // Fetch data
   React.useEffect(() => {
-    setPage(1);
-  }, [debouncedQ, category, from, to]);
+    let active = true;
 
-  const refresh = React.useCallback(async () => {
-    setLoading(true);
-    const res = await listExpensesAction({
-      q: debouncedQ,
-      category,
-      from: from || undefined,
-      to: to || undefined,
-      page,
-      pageSize: PAGE_SIZE,
-    });
-    if (!res.ok) toast.error(res.error);
-    if (res.ok && res.data) {
-      setItems(res.data.items);
-      setTotal(res.data.total);
-      setTotalPages(res.data.totalPages);
-    } else {
-      setItems([]);
-      setTotal(0);
-      setTotalPages(1);
+    async function fetchData() {
+      setLoading(true);
+      const res = await listExpensesAction({
+        q: debouncedQ,
+        category,
+        from: computeDateRange(year, month, week, weekOptions).from,
+        to: computeDateRange(year, month, week, weekOptions).to,
+        page,
+        pageSize: PAGE_SIZE,
+      });
+
+      if (!active) return;
+
+      if (!res.ok) {
+        toast.error(res.error);
+        setItems([]);
+        setTotal(0);
+        setTotalPages(1);
+      } else if (res.data) {
+        setItems(res.data.items);
+        setTotal(res.data.total);
+        setTotalPages(res.data.totalPages);
+      }
+      setLoading(false);
     }
-    setLoading(false);
-  }, [debouncedQ, category, from, to, page]);
 
-  React.useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void refresh();
-  }, [refresh]);
+    void fetchData();
 
-  const pageTotal = React.useMemo(() => items.reduce((sum, x) => sum + x.amount, 0), [items]);
+    return () => {
+      active = false;
+    };
+  }, [debouncedQ, category, year, month, week, page, refreshTrigger, weekOptions]);
+
+  const refresh = React.useCallback(() => {
+    setRefreshTrigger((prev) => prev + 1);
+  }, []);
+
+  const pageTotal = items.reduce((sum, x) => sum + x.amount, 0);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 sm:px-6">
@@ -167,46 +228,154 @@ export function ExpensesClient() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <div className="relative flex-1">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:max-w-md">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search title..."
+                  onChange={(e) => {
+                    setQ(e.target.value);
+                    setPage(1);
+                  }}
+                  placeholder="Search expenses..."
                   className="pl-9"
                 />
               </div>
-              <div className="relative sm:w-56">
-                <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="h-10 w-full appearance-none rounded-[var(--radius)] border border-input bg-background px-9 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              
+              <div className="relative ml-auto" ref={filterRef}>
+                <Button
+                  variant={hasActiveFilters ? "secondary" : "outline"}
+                  onClick={() => setFilterOpen((p) => !p)}
+                  className="relative px-3"
+                  aria-label="Filter expenses"
                 >
-                  <option value="all">All categories</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:w-[18rem]">
-                <Input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  aria-label="From date"
-                />
-                <Input
-                  type="date"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  aria-label="To date"
-                />
+                  <Filter className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Filters</span>
+                  {hasActiveFilters && (
+                    <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-primary"></span>
+                    </span>
+                  )}
+                </Button>
+                
+                {filterOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-[var(--radius)] border bg-popover p-4 text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium leading-none">Filters</h4>
+                      {hasActiveFilters && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            setCategory("all");
+                            setYear(INITIAL_YEAR);
+                            setMonth(INITIAL_MONTH);
+                            setWeek(INITIAL_WEEK);
+                            setPage(1);
+                            setFilterOpen(false);
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">Category</label>
+                        <select
+                          value={category}
+                          onChange={(e) => {
+                            setCategory(e.target.value);
+                            setPage(1);
+                          }}
+                          className="h-9 w-full appearance-none rounded-[var(--radius)] border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <option value="all">All Categories</option>
+                          {CATEGORIES.map((c) => (
+                            <option key={c.key} value={c.key}>
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">Year</label>
+                        <select
+                          value={year}
+                          onChange={(e) => {
+                            setYear(e.target.value);
+                            setWeek("all");
+                            setPage(1);
+                          }}
+                          className="h-9 w-full appearance-none rounded-[var(--radius)] border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {yearOptions.map((y) => (
+                            <option key={y.value} value={y.value}>
+                              {y.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground">Month</label>
+                        <select
+                          value={month}
+                          onChange={(e) => {
+                            setMonth(e.target.value);
+                            setWeek("all");
+                            setPage(1);
+                            setFilterOpen(false);
+                          }}
+                          className="h-9 w-full appearance-none rounded-[var(--radius)] border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <option value="all">All Months</option>
+                          {monthOptions.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+
+            {month !== "all" && weekOptions.length > 0 && (
+              <div className="relative overflow-hidden flex items-center justify-between rounded-[var(--radius)] border border-border/50 bg-background/40 backdrop-blur-xl p-1.5 shadow-sm animate-in fade-in-0 slide-in-from-left-8 duration-500 ease-out">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 shrink-0 rounded-sm" 
+                  onClick={handlePrevWeek} 
+                  disabled={currentWeekIndex <= 0}
+                  aria-label="Previous week"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium text-center truncate px-4">
+                  {allWeekOptions[currentWeekIndex]?.label}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 shrink-0 rounded-sm" 
+                  onClick={handleNextWeek} 
+                  disabled={currentWeekIndex >= allWeekOptions.length - 1}
+                  aria-label="Next week"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
 
             <Separator />
 

@@ -63,11 +63,11 @@ export function CategoryPieCard({ data }: { data: { name: string; value: number 
   );
 
   return (
-    <Card className="min-w-[20rem] border-sky-200/70 bg-gradient-to-br from-sky-50 via-background to-blue-50/60 dark:border-border dark:from-background dark:to-background">
-      <CardHeader>
+    <Card className="min-w-0 border-sky-200/70 bg-gradient-to-br from-sky-50 via-background to-blue-50/60 dark:border-border dark:from-background dark:to-background">
+      <CardHeader className="p-4 sm:p-5">
         <CardTitle>Category distribution</CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 p-4 pt-0 sm:p-5 sm:pt-0">
         {data.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             No data yet
@@ -78,7 +78,7 @@ export function CategoryPieCard({ data }: { data: { name: string; value: number 
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Tooltip content={<MoneyTooltip />} />
-                  <Pie data={data} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={3}>
+                  <Pie data={data} dataKey="value" nameKey="name" innerRadius="45%" outerRadius="70%" paddingAngle={3}>
                     {data.map((_, idx) => (
                       <Cell key={idx} fill={colors[idx]} />
                     ))}
@@ -91,7 +91,7 @@ export function CategoryPieCard({ data }: { data: { name: string; value: number 
               {data.slice(0, 6).map((item, idx) => (
                 <div
                   key={item.name}
-                  className="rounded-lg border border-border/70 bg-background/70 px-2.5 py-2"
+                  className="max-w-36 rounded-lg border border-border/70 bg-background/70 px-2.5 py-2"
                 >
                   <div className="flex items-center gap-2 text-xs font-medium">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors[idx] }} />
@@ -111,16 +111,16 @@ export function CategoryPieCard({ data }: { data: { name: string; value: number 
 
 export function WeeklyBarCard({ data }: { data: { day: string; amount: number }[] }) {
   return (
-    <Card className="min-w-[20rem] border-violet-200/70 bg-gradient-to-br from-violet-50 via-background to-indigo-50/60 dark:border-border dark:from-background dark:to-background">
-      <CardHeader>
+    <Card className="min-w-0 border-violet-200/70 bg-gradient-to-br from-violet-50 via-background to-indigo-50/60 dark:border-border dark:from-background dark:to-background">
+      <CardHeader className="p-4 sm:p-5">
         <CardTitle>Weekly spending</CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 p-2 pt-0 sm:p-5 sm:pt-0">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <Tooltip content={<MoneyTooltip />} />
             <XAxis dataKey="day" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={36} />
+            <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12 }} />
             <Bar dataKey="amount" radius={[8, 8, 0, 0]} fill="hsl(var(--primary))" />
           </BarChart>
         </ResponsiveContainer>
@@ -131,17 +131,17 @@ export function WeeklyBarCard({ data }: { data: { day: string; amount: number }[
 
 export function MonthlyTrendCard({ data }: { data: { month: string; amount: number }[] }) {
   return (
-    <Card className="min-w-[20rem] border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-background to-teal-50/60 dark:border-border dark:from-background dark:to-background">
-      <CardHeader>
+    <Card className="min-w-0 border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-background to-teal-50/60 dark:border-border dark:from-background dark:to-background">
+      <CardHeader className="p-4 sm:p-5">
         <CardTitle>Monthly trend</CardTitle>
       </CardHeader>
-      <CardContent className="h-64">
+      <CardContent className="h-64 p-2 pt-0 sm:p-5 sm:pt-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="4 4" />
             <Tooltip content={<MoneyTooltip />} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={36} />
+            <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12 }} />
             <Line
               type="monotone"
               dataKey="amount"
@@ -155,4 +155,3 @@ export function MonthlyTrendCard({ data }: { data: { month: string; amount: numb
     </Card>
   );
 }
-

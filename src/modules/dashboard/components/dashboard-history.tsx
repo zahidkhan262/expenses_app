@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { endOfMonth, format, parse, startOfMonth, subMonths } from "date-fns";
+import { format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
@@ -12,26 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoryMeta } from "@/utils/categories";
+import { buildMonthOptions, monthRange } from "@/utils/date";
 import { cn } from "@/lib/utils";
 import { formatInr } from "@/utils/currency";
 
 const PAGE_SIZE = 10;
-
-function buildMonthOptions(count = 12) {
-  const now = new Date();
-  return Array.from({ length: count }).map((_, i) => {
-    const d = subMonths(now, i);
-    return { value: format(d, "yyyy-MM"), label: format(d, "MMMM yyyy") };
-  });
-}
-
-function monthRange(month: string) {
-  const date = parse(month, "yyyy-MM", new Date());
-  return {
-    from: format(startOfMonth(date), "yyyy-MM-dd"),
-    to: format(endOfMonth(date), "yyyy-MM-dd"),
-  };
-}
 
 export function DashboardHistory() {
   const monthOptions = React.useMemo(() => buildMonthOptions(), []);
@@ -43,6 +28,7 @@ export function DashboardHistory() {
   const [total, setTotal] = React.useState(0);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [month]);
 
@@ -69,13 +55,13 @@ export function DashboardHistory() {
 
   return (
     <Card>
-      <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
+      <CardHeader className="flex-col items-stretch gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:p-5">
         <CardTitle>Expense history</CardTitle>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:ml-auto sm:flex-row sm:items-center">
           <select
             value={month}
             onChange={(e) => setMonth(e.target.value)}
-            className="h-9 rounded-[var(--radius)] border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 w-full rounded-[var(--radius)] border border-input bg-background px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
             aria-label="Select month"
           >
             {monthOptions.map((m) => (
@@ -84,12 +70,12 @@ export function DashboardHistory() {
               </option>
             ))}
           </select>
-          <Button asChild variant="ghost" className="h-8 px-2 text-xs">
+          <Button asChild variant="ghost" className="h-9 px-2 text-xs sm:h-8">
             <Link href="/dashboard/expenses">Manage all</Link>
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 p-4 pt-0 sm:p-5 sm:pt-0">
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -108,10 +94,10 @@ export function DashboardHistory() {
             {items.map((x) => {
               const meta = getCategoryMeta(x.category);
               return (
-                <div key={x.id} className="flex items-center justify-between gap-3">
+                <div key={x.id} className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{x.title}</div>
-                    <div className="mt-1 flex items-center gap-2">
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       <Badge className={cn("border", meta.badgeClass)} variant="outline">
                         {meta.label}
                       </Badge>
@@ -120,17 +106,17 @@ export function DashboardHistory() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-sm font-semibold tabular-nums">{formatInr(x.amount)}</div>
+                  <div className="shrink-0 text-right text-sm font-semibold tabular-nums">{formatInr(x.amount)}</div>
                 </div>
               );
             })}
 
             {totalPages > 1 ? (
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
                   Page {page} of {totalPages}
                 </p>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex">
                   <Button
                     variant="outline"
                     size="sm"

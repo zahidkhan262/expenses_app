@@ -26,6 +26,7 @@ export type BorrowListItem = {
   amount: number;
   personName: string;
   type: "given" | "taken";
+  status: "active" | "returned";
   notes: string;
   date: string;
   createdAt: string;
@@ -39,6 +40,7 @@ type BorrowLean = {
   amount: number;
   personName: string;
   type: "given" | "taken";
+  status?: "active" | "returned";
   notes?: string;
   date: Date;
   createdAt: Date;
@@ -61,6 +63,7 @@ function toItem(doc: BorrowLean): BorrowListItem {
     amount: doc.amount,
     personName: doc.personName,
     type: doc.type,
+    status: doc.status || "active",
     notes: doc.notes || "",
     date: new Date(doc.date).toISOString(),
     createdAt: new Date(doc.createdAt).toISOString(),
@@ -153,6 +156,20 @@ export async function deleteBorrowAction(id: string): Promise<ActionResult> {
   await connectToDb();
   const res = await Borrow.deleteOne({ _id: id, userId: user.sub });
   if (res.deletedCount !== 1) return { ok: false, error: "Borrow record not found" };
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/borrows");
+  return { ok: true };
+}
+
+export async function markBorrowReturnedAction(id: string): Promise<ActionResult> {
+  const user = await requireUser();
+  await connectToDb();
+  const existing = await Borrow.findOne({ _id: id, userId: user.sub });
+  if (!existing) return { ok: false, error: "Borrow record not found" };
+
+  existing.status = "returned";
+  await existing.save();
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/borrows");
   return { ok: true };
