@@ -192,6 +192,60 @@ function groupItemsByPerson(items: BorrowListItem[]) {
   }, {} as Record<string, BorrowListItem[]>);
 }
 
+
+function PersonGroup({ 
+  person, 
+  items, 
+  onRefresh, 
+  isHistory 
+}: { 
+  person: string; 
+  items: BorrowListItem[]; 
+  onRefresh: () => void;
+  isHistory?: boolean;
+}) {
+  const [expanded, setExpanded] = React.useState(true);
+  const hasMultiple = items.length > 1;
+
+  return (
+    <div className="space-y-3">
+      <div 
+        className={cn(
+          "flex items-center justify-between", 
+          hasMultiple && "cursor-pointer select-none rounded-[var(--radius)] hover:bg-muted/30 p-1 -mx-1"
+        )}
+        onClick={() => hasMultiple && setExpanded(!expanded)}
+      >
+        <div className={cn("flex items-center gap-2", isHistory && "text-muted-foreground")}>
+          <span className={cn(
+            "flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
+            isHistory ? "bg-muted" : "bg-primary/10 text-primary"
+          )}>
+            {person.charAt(0).toUpperCase()}
+          </span>
+          <h3 className="text-sm font-semibold tracking-tight">{person}</h3>
+          {hasMultiple && (
+            <Badge variant="secondary" className="ml-1 text-[10px] bg-muted">{items.length}</Badge>
+          )}
+        </div>
+        {hasMultiple && (
+          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground" tabIndex={-1}>
+            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        )}
+      </div>
+      
+      {(!hasMultiple || expanded) && (
+        <div className="space-y-3">
+          {items.map((x) => (
+            <BorrowRow key={x.id} item={x} onRefresh={onRefresh} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function BorrowsClient() {
   const [items, setItems] = React.useState<BorrowListItem[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -333,19 +387,12 @@ export function BorrowsClient() {
               ) : (
                 <div className="space-y-6">
                   {Object.entries(groupItemsByPerson(activeItems)).map(([person, personItems]) => (
-                    <div key={person} className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                          {person.charAt(0).toUpperCase()}
-                        </span>
-                        <h3 className="text-sm font-semibold tracking-tight">{person}</h3>
-                      </div>
-                      <div className="space-y-3">
-                        {personItems.map((x) => (
-                          <BorrowRow key={x.id} item={x} onRefresh={refresh} />
-                        ))}
-                      </div>
-                    </div>
+                    <PersonGroup 
+                      key={person} 
+                      person={person} 
+                      items={personItems} 
+                      onRefresh={refresh} 
+                    />
                   ))}
                 </div>
               )}
@@ -368,19 +415,13 @@ export function BorrowsClient() {
               ) : (
                 <div className="space-y-6 opacity-80 hover:opacity-100 transition-opacity">
                   {Object.entries(groupItemsByPerson(historyItems)).map(([person, personItems]) => (
-                    <div key={person} className="space-y-3">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                          {person.charAt(0).toUpperCase()}
-                        </span>
-                        <h3 className="text-sm font-semibold">{person}</h3>
-                      </div>
-                      <div className="space-y-3">
-                        {personItems.map((x) => (
-                          <BorrowRow key={x.id} item={x} onRefresh={refresh} />
-                        ))}
-                      </div>
-                    </div>
+                    <PersonGroup 
+                      key={person} 
+                      person={person} 
+                      items={personItems} 
+                      onRefresh={refresh}
+                      isHistory
+                    />
                   ))}
                 </div>
               )}
