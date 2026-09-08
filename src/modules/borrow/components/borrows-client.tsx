@@ -183,6 +183,15 @@ function BorrowRow({
   );
 }
 
+function groupItemsByPerson(items: BorrowListItem[]) {
+  return items.reduce((acc, item) => {
+    const name = item.personName || "Unknown";
+    if (!acc[name]) acc[name] = [];
+    acc[name].push(item);
+    return acc;
+  }, {} as Record<string, BorrowListItem[]>);
+}
+
 export function BorrowsClient() {
   const [items, setItems] = React.useState<BorrowListItem[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -322,9 +331,21 @@ export function BorrowsClient() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {activeItems.map((x) => (
-                    <BorrowRow key={x.id} item={x} onRefresh={refresh} />
+                <div className="space-y-6">
+                  {Object.entries(groupItemsByPerson(activeItems)).map(([person, personItems]) => (
+                    <div key={person} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                          {person.charAt(0).toUpperCase()}
+                        </span>
+                        <h3 className="text-sm font-semibold tracking-tight">{person}</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {personItems.map((x) => (
+                          <BorrowRow key={x.id} item={x} onRefresh={refresh} />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -345,9 +366,21 @@ export function BorrowsClient() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 opacity-75 hover:opacity-100 transition-opacity">
-                  {historyItems.map((x) => (
-                    <BorrowRow key={x.id} item={x} onRefresh={refresh} />
+                <div className="space-y-6 opacity-80 hover:opacity-100 transition-opacity">
+                  {Object.entries(groupItemsByPerson(historyItems)).map(([person, personItems]) => (
+                    <div key={person} className="space-y-3">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                          {person.charAt(0).toUpperCase()}
+                        </span>
+                        <h3 className="text-sm font-semibold">{person}</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {personItems.map((x) => (
+                          <BorrowRow key={x.id} item={x} onRefresh={refresh} />
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
