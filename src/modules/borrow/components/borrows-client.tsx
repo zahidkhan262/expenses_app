@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { formatInr } from "@/utils/currency";
 
@@ -216,6 +217,9 @@ export function BorrowsClient() {
     [items],
   );
 
+  const activeItems = items.filter(x => x.status !== "returned");
+  const historyItems = items.filter(x => x.status === "returned");
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 sm:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -264,16 +268,16 @@ export function BorrowsClient() {
       </div>
 
       <Card className="mt-5">
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>All borrows</CardTitle>
+        <CardHeader className="flex-row items-center justify-between pb-2">
+          <CardTitle>Borrow Records</CardTitle>
           <div className="text-sm text-muted-foreground">
-            Net:{" "}
+            Net Active:{" "}
             <span className="font-medium text-foreground">
               {formatInr(givenTotal - takenTotal)}
             </span>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-2">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -296,27 +300,59 @@ export function BorrowsClient() {
           </div>
 
           <Separator />
-
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full" />
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <div className="rounded-[var(--radius)] border border-dashed border-border p-6 text-center">
-              <p className="text-sm font-medium">No borrow records yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Add your first borrow to start tracking.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {items.map((x) => (
-                <BorrowRow key={x.id} item={x} onRefresh={refresh} />
-              ))}
-            </div>
-          )}
+          
+          <Tabs defaultValue="active" className="w-full">
+            <TabsList className="mb-4 grid w-full grid-cols-2">
+              <TabsTrigger value="active">Active ({activeItems.length})</TabsTrigger>
+              <TabsTrigger value="history">History ({historyItems.length})</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="active" className="space-y-3">
+              {loading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : activeItems.length === 0 ? (
+                <div className="rounded-[var(--radius)] border border-dashed border-border p-6 text-center">
+                  <p className="text-sm font-medium">No active borrow records</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    You have no active borrowings pending.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeItems.map((x) => (
+                    <BorrowRow key={x.id} item={x} onRefresh={refresh} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="history" className="space-y-3">
+              {loading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
+                  ))}
+                </div>
+              ) : historyItems.length === 0 ? (
+                <div className="rounded-[var(--radius)] border border-dashed border-border p-6 text-center">
+                  <p className="text-sm font-medium">No borrow history</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Returned money will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3 opacity-75 hover:opacity-100 transition-opacity">
+                  {historyItems.map((x) => (
+                    <BorrowRow key={x.id} item={x} onRefresh={refresh} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
