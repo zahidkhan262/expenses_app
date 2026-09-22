@@ -16,6 +16,8 @@ import { connectToDb } from "@/lib/db";
 import { Expense } from "@/models/expense";
 import { Income } from "@/models/income";
 import { Budget } from "@/models/budget";
+import { Borrow } from "@/models/borrow";
+import { Loan } from "@/models/loan";
 
 type BucketAgg = { _id: string; total: number };
 type RecentExpenseLean = {
@@ -46,6 +48,15 @@ export type DashboardStats = {
     category: string;
     date: string;
   }[];
+  borrowGiven: number;
+  borrowTaken: number;
+  zahidLoan: {
+    exists: boolean;
+    monthsCompleted: number;
+    totalMonths: number;
+    remainingAmount: number;
+  } | null;
+  rentTotal: number;
 };
 
 export async function getDashboardStats(
@@ -133,6 +144,40 @@ export async function getDashboardStats(
   ]);
   const trendMap = new Map<string, number>(trendAgg.map((x) => [x._id, x.total]));
 
+  const borrowAgg = await Borrow.aggregate([
+    { $match: { userId: oid, status: { $ne: "returned" } } },
+    { $group: { _id: "$type", total: { $sum: "$amount" } } }
+  ]);
+  let borrowGiven = 0;
+  let borrowTaken = 0;
+  borrowAgg.forEach(b => {
+    if (b._id === "given") borrowGiven = b.total;
+    if (b._id === "taken") borrowTaken = b.total;
+  });
+
+  const [rentAgg] = await Expense.aggregate([
+    { $match: { userId: oid, category: { $regex: /rent/i }, date: { $gte: monthStart, $lte: monthEnd } } },
+    { $group: { _id: null, total: { $sum: "$amount" } } }
+  ]);
+  const rentTotal = rentAgg?.total || 0;
+
+  const zahidLoanDoc = await Loan.findOne({ userId: oid, title: { $regex: /zahid_loan/i } }).lean() as any;
+  let zahidLoan = null;
+  if (zahidLoanDoc) {
+    const paidCount = zahidLoanDoc.installments.filter((i: any) => i.isPaid).length;
+    const totalMonths = zahidLoanDoc.tenureMonths;
+    const nextUnpaid = zahidLoanDoc.installments.find((i: any) => !i.isPaid);
+    // fallback to principalAmount if all are paid or no unpaid is found
+    const remainingAmount = nextUnpaid ? nextUnpaid.remainingBalance : 0;
+    
+    zahidLoan = {
+      exists: true,
+      monthsCompleted: paidCount,
+      totalMonths,
+      remainingAmount
+    };
+  }
+
   const monthTotal = Number(monthAgg?.total ?? 0);
   const incomeMonthTotal = Number(incomeMonthAgg?.total ?? 0);
   const remainingBalance = incomeMonthTotal - monthTotal;
@@ -181,5 +226,9 @@ export async function getDashboardStats(
       category: x.category,
       date: new Date(x.date).toISOString(),
     })),
+    borrowGiven,
+    borrowTaken,
+    zahidLoan,
+    rentTotal,
   };
 }

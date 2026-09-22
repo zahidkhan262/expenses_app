@@ -109,6 +109,16 @@ export function CategoryPieCard({ data }: { data: { name: string; value: number 
   );
 }
 
+
+const compactFormatter = (value: number) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+};
+
 export function WeeklyBarCard({ data }: { data: { day: string; amount: number }[] }) {
   return (
     <Card className="min-w-0 border-violet-200/70 bg-gradient-to-br from-violet-50 via-background to-indigo-50/60 dark:border-border dark:from-background dark:to-background">
@@ -120,7 +130,7 @@ export function WeeklyBarCard({ data }: { data: { day: string; amount: number }[
           <BarChart data={data}>
             <Tooltip content={<MoneyTooltip />} />
             <XAxis dataKey="day" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12 }} />
+            <YAxis tickLine={false} axisLine={false} width={50} tick={{ fontSize: 12 }} tickFormatter={compactFormatter} />
             <Bar dataKey="amount" radius={[8, 8, 0, 0]} fill="hsl(var(--primary))" />
           </BarChart>
         </ResponsiveContainer>
@@ -141,7 +151,7 @@ export function MonthlyTrendCard({ data }: { data: { month: string; amount: numb
             <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="4 4" />
             <Tooltip content={<MoneyTooltip />} />
             <XAxis dataKey="month" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={32} tick={{ fontSize: 12 }} />
+            <YAxis tickLine={false} axisLine={false} width={50} tick={{ fontSize: 12 }} tickFormatter={compactFormatter} />
             <Line
               type="monotone"
               dataKey="amount"

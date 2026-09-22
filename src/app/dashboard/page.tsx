@@ -11,6 +11,7 @@ import { CategoryPieCard, MonthlyTrendCard, WeeklyBarCard } from "@/modules/dash
 import { AddExpenseHeaderButton } from "@/modules/dashboard/components/add-expense-header-button";
 import { BudgetMonthCard } from "@/modules/dashboard/components/budget-month-card";
 import { DashboardTabs } from "@/modules/dashboard/components/dashboard-tabs";
+import { BorrowStatCard } from "@/modules/dashboard/components/borrow-stat-card";
 import { getCategoryMeta } from "@/utils/categories";
 import { cn } from "@/lib/utils";
 import { formatInr } from "@/utils/currency";
@@ -53,53 +54,33 @@ export default async function DashboardPage() {
   const overview = (
     <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <BorrowStatCard borrowGiven={stats.borrowGiven} borrowTaken={stats.borrowTaken} />
         <StatCard
-          title="Total today"
-          value={formatInr(stats.todayTotal)}
-          subtitle="Today’s spending"
-          icon={<CalendarDays className="h-5 w-5" />}
-          className="border-sky-200/70 bg-gradient-to-br from-sky-50 via-background to-cyan-50/60 dark:border-border dark:from-background dark:to-background"
-        />
-        <StatCard
-          title="Weekly expenses"
-          value={formatInr(stats.weekTotal)}
-          subtitle="Last 7 days"
-          icon={<ArrowUpRight className="h-5 w-5" />}
+          title="Zahid Loan"
+          value={stats.zahidLoan ? `${stats.zahidLoan.monthsCompleted} / ${stats.zahidLoan.totalMonths}` : "—"}
+          subtitle={stats.zahidLoan ? `${formatInr(stats.zahidLoan.remainingAmount)} remaining` : "No active loan"}
+          icon={<ArrowUpRight className="h-5 w-5 text-violet-600" />}
           className="border-violet-200/70 bg-gradient-to-br from-violet-50 via-background to-indigo-50/60 dark:border-border dark:from-background dark:to-background"
         />
         <StatCard
           title="Monthly expenses"
           value={formatInr(stats.monthTotal)}
           subtitle="This month"
-          icon={<ArrowDownRight className="h-5 w-5" />}
+          icon={<ArrowDownRight className="h-5 w-5 text-amber-600" />}
           className="border-amber-200/70 bg-gradient-to-br from-amber-50 via-background to-orange-50/60 dark:border-border dark:from-background dark:to-background"
         />
-        <Card className="border-fuchsia-200/70 bg-gradient-to-br from-fuchsia-50 via-background to-pink-50/60 transition-transform hover:-translate-y-0.5 hover:shadow-md dark:border-border dark:from-background dark:to-background">
-          <CardHeader className="flex-row items-start justify-between gap-3 p-4 sm:p-5">
-            <div className="min-w-0 space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Top category</p>
-              <p className="break-words text-lg font-semibold tracking-tight sm:text-xl">
-                {stats.highestCategory ? highestMeta?.label ?? stats.highestCategory.category : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {stats.highestCategory ? formatInr(stats.highestCategory.amount) : "No spend yet"}
-              </p>
-            </div>
-            <span
-              className={cn(
-                "shrink-0 rounded-[var(--radius)] border border-border bg-accent/60 p-2",
-                highestMeta?.colorClass,
-              )}
-            >
-              <Crown className="h-5 w-5" />
-            </span>
-          </CardHeader>
-        </Card>
+        <StatCard
+          title="Rent"
+          value={formatInr(stats.rentTotal)}
+          subtitle="This month"
+          icon={<Crown className="h-5 w-5 text-fuchsia-600" />}
+          className="border-fuchsia-200/70 bg-gradient-to-br from-fuchsia-50 via-background to-pink-50/60 dark:border-border dark:from-background dark:to-background"
+        />
         <StatCard
           title="Remaining balance"
           value={formatInr(stats.remainingBalance)}
           subtitle="Income − expenses (this month)"
-          icon={<Wallet className="h-5 w-5" />}
+          icon={<Wallet className="h-5 w-5 text-emerald-600" />}
           className="border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-background to-teal-50/60 dark:border-border dark:from-background dark:to-background"
         />
       </div>
